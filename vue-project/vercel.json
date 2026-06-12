@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "target": "https://sisacad-enrollments-backend.vercel.app/:path*"
+    }
+  ]
+}
