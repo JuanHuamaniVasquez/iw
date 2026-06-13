@@ -7,6 +7,7 @@ const certificates = ref([])
 const student = ref(null)
 const loading = ref(false)
 const error = ref(null)
+const debugInfo = ref(null)
 
 const fetchCertificates = async () => {
   if (!cui.value.trim()) return
@@ -14,13 +15,24 @@ const fetchCertificates = async () => {
   error.value = null
   certificates.value = []
   student.value = null
+  debugInfo.value = null
 
   try {
-    const response = await getEnrollmentCertificates(cui.value)
-    const data = response.data
-    certificates.value = data.results
-    if (data.results.length > 0) {
-      student.value = data.results[0].student
+    const data = await getEnrollmentCertificates(cui.value)
+    debugInfo.value = JSON.stringify(data, null, 2)
+
+    if (data && Array.isArray(data.results)) {
+      certificates.value = data.results
+      if (data.results.length > 0 && data.results[0].student) {
+        student.value = data.results[0].student
+      }
+    } else if (data && Array.isArray(data)) {
+      certificates.value = data
+      if (data.length > 0 && data[0].student) {
+        student.value = data[0].student
+      }
+    } else {
+      error.value = 'La API no devolvió datos con el formato esperado. Revisa la consola (F12).'
     }
   } catch (err) {
     error.value = err.response?.data?.detail || err.message || 'Error al consultar la API'
@@ -81,16 +93,21 @@ onMounted(() => {
         </thead>
         <tbody>
           <tr v-for="cert in certificates" :key="cert.id">
-            <td>{{ cert.workload.course.code }}</td>
-            <td>{{ cert.workload.course.name }}</td>
-            <td>{{ cert.workload.course.credits }}</td>
-            <td>{{ cert.workload.group }}</td>
-            <td>{{ cert.workload.laboratory }}</td>
-            <td>{{ cert.workload.teacher.full_name }}</td>
-            <td>{{ cert.workload.course.year_display }} - {{ cert.workload.course.semester_display }}</td>
+            <td>{{ cert.workload?.course?.code || '-' }}</td>
+            <td>{{ cert.workload?.course?.name || '-' }}</td>
+            <td>{{ cert.workload?.course?.credits || '-' }}</td>
+            <td>{{ cert.workload?.group || '-' }}</td>
+            <td>{{ cert.workload?.laboratory || '-' }}</td>
+            <td>{{ cert.workload?.teacher?.full_name || '-' }}</td>
+            <td>{{ cert.workload?.course?.year_display || '-' }} - {{ cert.workload?.course?.semester_display || '-' }}</td>
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <div v-if="debugInfo && error" class="debug">
+      <h3>Respuesta de la API (debug):</h3>
+      <pre>{{ debugInfo }}</pre>
     </div>
 
     <div v-if="certificates.length === 0 && !loading && !error && student === null" class="empty">
@@ -212,4 +229,17 @@ tbody tr:hover {
   color: #78909c;
   margin-top: 2rem;
 }
-</style>
+
+.debug {
+  background: #fff3e0;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1.5rem;
+  font-size: 0.85rem;
+}
+
+.debug pre {
+  white-space: pre-wrap;
+  word-break: break-all;
+  background: #fff;
+  padding
