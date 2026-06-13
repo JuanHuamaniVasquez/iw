@@ -9,5 +9,3 @@ export const getEnrollmentCertificates = (cui) => {
     params: { cui }
   })
 }
-
-export default api

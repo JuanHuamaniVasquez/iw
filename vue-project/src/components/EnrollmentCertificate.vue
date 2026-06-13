@@ -16,8 +16,7 @@ const fetchCertificates = async () => {
   student.value = null
 
   try {
-    const response = await api.get(`/enrollment-certificate/?cui=${cui}`)
-
+    const response = await getEnrollmentCertificates(cui.value)
     const data = response.data
     certificates.value = data.results
     if (data.results.length > 0) {
