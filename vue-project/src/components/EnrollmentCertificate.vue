@@ -7,7 +7,6 @@ const certificates = ref([])
 const student = ref(null)
 const loading = ref(false)
 const error = ref(null)
-const debugInfo = ref(null)
 
 const fetchCertificates = async () => {
   if (!cui.value.trim()) return
@@ -15,13 +14,10 @@ const fetchCertificates = async () => {
   error.value = null
   certificates.value = []
   student.value = null
-  debugInfo.value = null
 
   try {
     const data = await getEnrollmentCertificates(cui.value)
-    debugInfo.value = JSON.stringify(data, null, 2)
-
-    if (data && Array.isArray(data.results)) {
+    if (data && data.results && Array.isArray(data.results)) {
       certificates.value = data.results
       if (data.results.length > 0 && data.results[0].student) {
         student.value = data.results[0].student
@@ -32,7 +28,7 @@ const fetchCertificates = async () => {
         student.value = data[0].student
       }
     } else {
-      error.value = 'La API no devolvió datos con el formato esperado. Revisa la consola (F12).'
+      error.value = 'No se encontraron resultados para este CUI.'
     }
   } catch (err) {
     error.value = err.response?.data?.detail || err.message || 'Error al consultar la API'
@@ -99,15 +95,10 @@ onMounted(() => {
             <td>{{ cert.workload?.group || '-' }}</td>
             <td>{{ cert.workload?.laboratory || '-' }}</td>
             <td>{{ cert.workload?.teacher?.full_name || '-' }}</td>
-            <td>{{ cert.workload?.course?.year_display || '-' }} - {{ cert.workload?.course?.semester_display || '-' }}</td>
+            <td>{{ cert.workload?.course?.year_display || '-' }}</td>
           </tr>
         </tbody>
       </table>
-    </div>
-
-    <div v-if="debugInfo && error" class="debug">
-      <h3>Respuesta de la API (debug):</h3>
-      <pre>{{ debugInfo }}</pre>
     </div>
 
     <div v-if="certificates.length === 0 && !loading && !error && student === null" class="empty">
@@ -229,17 +220,4 @@ tbody tr:hover {
   color: #78909c;
   margin-top: 2rem;
 }
-
-.debug {
-  background: #fff3e0;
-  border-radius: 8px;
-  padding: 1rem;
-  margin-top: 1.5rem;
-  font-size: 0.85rem;
-}
-
-.debug pre {
-  white-space: pre-wrap;
-  word-break: break-all;
-  background: #fff;
-  padding
+</style>
