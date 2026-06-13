@@ -7,6 +7,7 @@ const certificates = ref([])
 const student = ref(null)
 const loading = ref(false)
 const error = ref(null)
+const rawResponse = ref('')
 
 const fetchCertificates = async () => {
   if (!cui.value.trim()) return
@@ -14,9 +15,13 @@ const fetchCertificates = async () => {
   error.value = null
   certificates.value = []
   student.value = null
+  rawResponse.value = ''
 
   try {
-    const data = await getEnrollmentCertificates(cui.value)
+    const response = await getEnrollmentCertificates(cui.value)
+    const data = response.data
+    rawResponse.value = typeof data === 'string' ? data : JSON.stringify(data)
+
     if (data && data.results && Array.isArray(data.results)) {
       certificates.value = data.results
       if (data.results.length > 0 && data.results[0].student) {
@@ -28,10 +33,11 @@ const fetchCertificates = async () => {
         student.value = data[0].student
       }
     } else {
-      error.value = 'No se encontraron resultados para este CUI.'
+      error.value = 'No se encontraron resultados. Respuesta: ' + rawResponse.value.substring(0, 200)
     }
   } catch (err) {
-    error.value = err.response?.data?.detail || err.message || 'Error al consultar la API'
+    const msg = err.response?.data?.detail || err.message || 'Error al consultar la API'
+    error.value = msg
   } finally {
     loading.value = false
   }
@@ -114,27 +120,23 @@ onMounted(() => {
   padding: 2rem;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
-
 h1 {
   text-align: center;
   color: #1a237e;
   margin-bottom: 1.5rem;
 }
-
 h2 {
   color: #283593;
   border-bottom: 2px solid #3f51b5;
   padding-bottom: 0.5rem;
   margin-bottom: 1rem;
 }
-
 .search-bar {
   display: flex;
   gap: 0.5rem;
   justify-content: center;
   margin-bottom: 2rem;
 }
-
 .search-bar input {
   padding: 0.6rem 1rem;
   border: 1px solid #90a4ae;
@@ -142,7 +144,6 @@ h2 {
   font-size: 1rem;
   width: 260px;
 }
-
 .search-bar button {
   padding: 0.6rem 1.5rem;
   background-color: #3f51b5;
@@ -153,53 +154,43 @@ h2 {
   cursor: pointer;
   transition: background-color 0.2s;
 }
-
 .search-bar button:hover:not(:disabled) {
   background-color: #303f9f;
 }
-
 .search-bar button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
-
 .student-info {
   background: #e8eaf6;
   border-radius: 8px;
   padding: 1.2rem 1.5rem;
   margin-bottom: 2rem;
 }
-
 .student-info p {
   margin: 0.4rem 0;
   font-size: 1rem;
 }
-
 .courses {
   margin-top: 1rem;
 }
-
 table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 0.5rem;
 }
-
 thead {
   background-color: #3f51b5;
   color: white;
 }
-
 th, td {
   padding: 0.7rem 0.8rem;
   text-align: left;
   border-bottom: 1px solid #c5cae9;
 }
-
 tbody tr:hover {
   background-color: #e8eaf6;
 }
-
 .error {
   background: #ffebee;
   color: #c62828;
@@ -207,14 +198,12 @@ tbody tr:hover {
   border-radius: 6px;
   text-align: center;
 }
-
 .loading {
   text-align: center;
   padding: 2rem;
   color: #5c6bc0;
   font-size: 1.1rem;
 }
-
 .empty {
   text-align: center;
   color: #78909c;
